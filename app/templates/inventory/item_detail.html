@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ item_type.name }} — Inventaire ARV{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">{{ item_type.name }}</h1>
+  <div>
+    <a class="btn secondary" href="/inventory/{{ item_type.id }}/edit">Modifier</a>
+    <form method="post" action="/inventory/{{ item_type.id }}/delete" style="display:inline" onsubmit="return confirm('Archiver cet item ? Il ne sera plus proposé pour de nouvelles sorties.');">
+      <button class="btn danger" type="submit">Archiver</button>
+    </form>
+  </div>
+</div>
+
+<p class="muted">{{ item_type.category.name }}{% if item_type.description %} — {{ item_type.description }}{% endif %}</p>
+
+{% if item_type.is_serialized %}
+<div class="card">
+  <h2 style="margin-top:0">Unités ({{ item_type.units_in_stock }} en stock, {{ item_type.units_out }} sorti(s))</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Numéro de série</th><th>Statut</th><th>Notes</th><th></th></tr></thead>
+      <tbody>
+        {% for u in item_type.units %}
+        <tr>
+          <td>{{ u.serial_number or ('#' ~ u.id) }}</td>
+          <td>
+            {% if u.status.value == 'in_stock' %}<span class="badge ok">En stock</span>
+            {% elif u.status.value == 'out' %}<span class="badge warn">Sorti</span>
+            {% elif u.status.value == 'maintenance' %}<span class="badge warn">Maintenance</span>
+            {% elif u.status.value == 'lost' %}<span class="badge danger">Perdu</span>
+            {% else %}<span class="badge muted">Retiré</span>{% endif %}
+          </td>
+          <td>{{ u.notes or '' }}</td>
+          <td>
+            {% if u.status.value == 'in_stock' %}
+            <form method="post" action="/inventory/{{ item_type.id }}/units/{{ u.id }}/delete" onsubmit="return confirm('Retirer cette unité de l\'inventaire ?');">
+              <button class="btn small secondary" type="submit">Retirer</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted">Aucune unité.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="/inventory/{{ item_type.id }}/units/add" class="field-row" style="margin-top:1rem;align-items:flex-end">
+    <div class="field" style="flex:1">
+      <label>Ajouter une unité — numéro de série (optionnel)</label>
+      <input type="text" name="serial_number">
+    </div>
+    <button class="btn" type="submit">Ajouter</button>
+  </form>
+</div>
+{% else %}
+<div class="card">
+  <h2 style="margin-top:0">Quantité</h2>
+  <p><strong>{{ available_qty }}</strong> disponible(s) sur <strong>{{ item_type.total_quantity or 0 }}</strong> {{ item_type.unit_label or '' }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0">Accessoires liés (kit par défaut)</h2>
+  <p class="muted">Ces accessoires sont automatiquement proposés en quantité par défaut quand on sort « {{ item_type.name }} ».</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Accessoire</th><th>Quantité par défaut</th><th></th></tr></thead>
+      <tbody>
+        {% for kc in kit_components %}
+        <tr>
+          <td>{{ kc.accessory_item_type.name }}</td>
+          <td>{{ kc.default_quantity }}</td>
+          <td>
+            <form method="post" action="/inventory/{{ item_type.id }}/kit/{{ kc.id }}/delete">
+              <button class="btn small secondary" type="submit">Retirer</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="muted">Aucun accessoire lié.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="/inventory/{{ item_type.id }}/kit/add" class="field-row" style="margin-top:1rem;align-items:flex-end">
+    <div class="field" style="flex:1">
+      <label>Accessoire</label>
+      <select name="accessory_item_type_id" required>
+        {% for ot in other_item_types %}
+          <option value="{{ ot.id }}">{{ ot.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>Quantité par défaut</label>
+      <input type="number" name="default_quantity" min="1" value="1">
+    </div>
+    <button class="btn" type="submit">Lier</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Sortir du matériel — Inventaire ARV{% endblock %}
+{% block content %}
+<h1>Sortir du matériel</h1>
+
+<form method="post" action="/loans/new" id="checkout-form" class="card">
+
+  <fieldset>
+    <legend>Qui sort le matériel</legend>
+    <div class="field">
+      <label>Emprunteur (membre de l'équipe)</label>
+      <select name="borrower_member_id" required>
+        <option value="">— Choisir —</option>
+        {% for m in members %}<option value="{{ m.id }}">{{ m.full_name }}</option>{% endfor %}
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Qui sera en possession</legend>
+    <div class="toggle-row">
+      <label><input type="radio" name="holder_mode" value="self" checked onchange="arvToggleHolderMode()"> Pour moi-même (l'emprunteur)</label>
+      <label><input type="radio" name="holder_mode" value="other" onchange="arvToggleHolderMode()"> Pour un tiers (client, comité, autre membre...)</label>
+    </div>
+    <div id="holder-fields" class="hidden">
+      <div class="field-row">
+        <div class="field">
+          <label>Membre de l'équipe</label>
+          <select name="holder_member_id" id="holder_member_select"
+                  onchange="document.getElementById('holder_party_select').value='';document.getElementById('new_party_name').value='';">
+            <option value="">—</option>
+            {% for m in members %}<option value="{{ m.id }}">{{ m.full_name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>ou Partie existante (comité, client...)</label>
+          <select name="holder_party_id" id="holder_party_select"
+                  onchange="document.getElementById('holder_member_select').value='';document.getElementById('new_party_name').value='';">
+            <option value="">—</option>
+            {% for p in parties %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>ou Nouvelle partie (si elle n'existe pas encore dans la liste)</label>
+        <input type="text" name="new_party_name" id="new_party_name" placeholder="ex. Comité Promotion"
+               oninput="document.getElementById('holder_member_select').value='';document.getElementById('holder_party_select').value='';">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Matériel à sortir</legend>
+    <p class="muted">Choisir un item l'ajoute avec ses accessoires par défaut (piles, chargeur...). Ajuste les quantités ou retire une ligne au besoin.</p>
+    <div class="field-row" style="align-items:flex-end">
+      <div class="field" style="flex:1">
+        <label>Ajouter un item</label>
+        <select id="item-picker">
+          <option value="">— Choisir un item —</option>
+        </select>
+      </div>
+      <button type="button" class="btn secondary" onclick="arvAddLine()">+ Ajouter</button>
+    </div>
+    <div id="lines-container"></div>
+    <p id="no-lines-msg" class="muted">Aucun item ajouté pour l'instant.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Détails</legend>
+    <div class="field-row">
+      <div class="field">
+        <label>Date de retour prévue</label>
+        <input type="date" name="due_date" value="{{ default_due }}">
+      </div>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea name="notes" rows="2"></textarea>
+    </div>
+  </fieldset>
+
+  <button class="btn" type="submit">Enregistrer la sortie</button>
+</form>
+
+<script id="item-types-data" type="application/json">{{ item_types_json | safe }}</script>
+<script>
+  window.ARV_ITEM_TYPES = JSON.parse(document.getElementById('item-types-data').textContent);
+  document.addEventListener('DOMContentLoaded', arvInitCheckoutForm);
+</script>
+{% endblock %}

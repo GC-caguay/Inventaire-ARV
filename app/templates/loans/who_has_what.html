@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Qui a quoi — Inventaire ARV{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">Qui a quoi</h1>
+  <a class="btn" href="/loans/new">+ Sortir du matériel</a>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Emprunteur</th><th>Détenteur</th><th>Matériel</th><th>Échéance</th><th>Statut</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for loan in loans %}
+      <tr>
+        <td>{{ loan.id }}</td>
+        <td>{{ loan.borrower.full_name }}</td>
+        <td>{{ loan.holder_display }}</td>
+        <td>
+          {% for line in loan.lines %}
+            {{ line.item_type.name }}{% if not line.item_unit %} (x{{ line.quantity_outstanding }}){% endif %}{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </td>
+        <td class="{% if loan.is_overdue %}overdue{% endif %}">{{ loan.due_date or '—' }}</td>
+        <td>
+          {% if loan.status.value == 'active' %}<span class="badge warn">Actif</span>
+          {% elif loan.status.value == 'partially_returned' %}<span class="badge warn">Partiel</span>
+          {% endif %}
+          {% if loan.is_overdue %}<span class="badge danger">En retard</span>{% endif %}
+        </td>
+        <td><a class="btn small" href="/loans/{{ loan.id }}/return">Retour</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted">Rien n'est sorti en ce moment.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

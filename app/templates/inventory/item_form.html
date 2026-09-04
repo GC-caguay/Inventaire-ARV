@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{% if item_type %}Modifier{% else %}Nouvel item{% endif %} — Inventaire ARV{% endblock %}
+{% block content %}
+<h1>{% if item_type %}Modifier « {{ item_type.name }} »{% else %}Nouvel item{% endif %}</h1>
+
+<form method="post" action="{% if item_type %}/inventory/{{ item_type.id }}/edit{% else %}/inventory/new{% endif %}" class="card">
+  <div class="field">
+    <label>Nom</label>
+    <input type="text" name="name" required value="{{ item_type.name if item_type else '' }}">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Catégorie</label>
+      <select name="category_id" required>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {% if item_type and item_type.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>Étiquette d'unité (ex. "pile", "carte")</label>
+      <input type="text" name="unit_label" value="{{ item_type.unit_label if item_type else '' }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Description</label>
+    <textarea name="description" rows="2">{{ item_type.description if item_type else '' }}</textarea>
+  </div>
+
+  {% if not item_type %}
+  <div class="field">
+    <label>Type de suivi</label>
+    <div class="toggle-row">
+      <label><input type="radio" name="is_serialized" value="true" checked onchange="arvToggleSerialized(true)"> Matériel sérialisé (ex. caméra — chaque unité est distincte)</label>
+      <label><input type="radio" name="is_serialized" value="false" onchange="arvToggleSerialized(false)"> Matériel en lot (ex. piles — suivi par quantité)</label>
+    </div>
+  </div>
+  <div id="serialized-fields" class="field">
+    <label>Nombre d'unités initiales à créer</label>
+    <input type="number" name="initial_units" min="0" value="1">
+  </div>
+  <div id="fungible-fields" class="field hidden">
+    <label>Quantité totale possédée</label>
+    <input type="number" name="total_quantity" min="0" value="0">
+  </div>
+  {% else %}
+  <input type="hidden" name="is_serialized" value="{{ 'true' if item_type.is_serialized else 'false' }}">
+  <p class="muted">Type de suivi : <strong>{% if item_type.is_serialized %}Sérialisé{% else %}En lot{% endif %}</strong> (non modifiable après création)</p>
+  {% if not item_type.is_serialized %}
+  <div class="field">
+    <label>Quantité totale possédée</label>
+    <input type="number" name="total_quantity" min="0" value="{{ item_type.total_quantity or 0 }}">
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <button class="btn" type="submit">{% if item_type %}Enregistrer{% else %}Créer{% endif %}</button>
+  {% if item_type %}<a class="btn secondary" href="/inventory/{{ item_type.id }}">Annuler</a>{% endif %}
+</form>
+{% endblock %}

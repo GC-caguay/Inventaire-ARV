@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord — Inventaire ARV{% endblock %}
+{% block content %}
+<h1>Tableau de bord</h1>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="value">{{ stats.serialized_in_stock }}</div>
+    <div class="label">Unités sérialisées en stock</div>
+  </div>
+  <div class="stat">
+    <div class="value">{{ stats.serialized_out }}</div>
+    <div class="label">Unités sérialisées sorties</div>
+  </div>
+  <div class="stat">
+    <div class="value">{{ stats.fungible_available }} / {{ stats.fungible_total }}</div>
+    <div class="label">Matériel en lot disponible / total</div>
+  </div>
+  <div class="stat">
+    <div class="value">{{ stats.active_loan_count }}</div>
+    <div class="label">Prêts actifs</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Prêts en retard</h2>
+  {% if stats.overdue_loans %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Emprunteur</th><th>Détenteur</th><th>Échéance</th><th></th></tr></thead>
+      <tbody>
+      {% for loan in stats.overdue_loans %}
+        <tr>
+          <td>{{ loan.id }}</td>
+          <td>{{ loan.borrower.full_name }}</td>
+          <td>{{ loan.holder_display }}</td>
+          <td class="overdue">{{ loan.due_date }}</td>
+          <td><a class="btn small" href="/loans/{{ loan.id }}/return">Retour</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Aucun prêt en retard.</p>
+  {% endif %}
+</div>
+
+<div class="toolbar">
+  <a class="btn" href="/loans/new">+ Sortir du matériel</a>
+  <a class="btn secondary" href="/inventory/new">+ Ajouter un item</a>
+</div>
+{% endblock %}

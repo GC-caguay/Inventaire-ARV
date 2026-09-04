@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Retour — Prêt #{{ loan.id }} — Inventaire ARV{% endblock %}
+{% block content %}
+<h1>Retour — Prêt #{{ loan.id }}</h1>
+<p class="muted">
+  Emprunteur : <strong>{{ loan.borrower.full_name }}</strong> —
+  Détenteur : <strong>{{ loan.holder_display }}</strong>
+  {% if loan.due_date %} — Échéance : {{ loan.due_date }}{% endif %}
+</p>
+
+<form method="post" action="/loans/{{ loan.id }}/return" class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>Item</th><th>Sorti</th><th>Déjà retourné</th><th>Quantité retournée</th><th>État</th></tr>
+      </thead>
+      <tbody>
+        {% for line in loan.lines %}
+        <tr>
+          <td>
+            {% if line.quantity_outstanding > 0 %}
+            <input type="checkbox" name="return_{{ line.id }}" value="1" checked>
+            {% else %}
+            <span class="badge ok">Retourné</span>
+            {% endif %}
+          </td>
+          <td>
+            {{ line.item_type.name }}
+            {% if line.item_unit %} — {{ line.item_unit.serial_number or ('#' ~ line.item_unit.id) }}{% endif %}
+            {% if line.is_from_kit %}<span class="muted"> (kit)</span>{% endif %}
+          </td>
+          <td>{{ line.quantity }}</td>
+          <td>{{ line.quantity_returned }}</td>
+          <td>
+            {% if line.quantity_outstanding > 0 and not line.item_unit %}
+            <input type="number" name="quantity_{{ line.id }}" class="qty-input" min="0" max="{{ line.quantity_outstanding }}" value="{{ line.quantity_outstanding }}">
+            {% elif line.item_unit %}
+            <span class="muted">unité complète</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if line.quantity_outstanding > 0 %}
+            <select name="condition_{{ line.id }}">
+              <option value="ok">Bon état</option>
+              <option value="damaged">Endommagé</option>
+              <option value="lost">Perdu</option>
+            </select>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <button class="btn" type="submit" style="margin-top:1rem">Enregistrer le retour</button>
+</form>
+{% endblock %}

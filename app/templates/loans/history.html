@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Historique des prêts — Inventaire ARV{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">Historique des prêts</h1>
+  <form method="get" action="/loans">
+    <select name="status" onchange="this.form.submit()">
+      <option value="" {% if not status %}selected{% endif %}>Tous les statuts</option>
+      <option value="active" {% if status == 'active' %}selected{% endif %}>Actif</option>
+      <option value="partially_returned" {% if status == 'partially_returned' %}selected{% endif %}>Partiel</option>
+      <option value="returned" {% if status == 'returned' %}selected{% endif %}>Retourné</option>
+      <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Annulé</option>
+    </select>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Emprunteur</th><th>Détenteur</th><th>Sortie</th><th>Échéance</th><th>Retour</th><th>Statut</th></tr>
+    </thead>
+    <tbody>
+      {% for loan in loans %}
+      <tr>
+        <td>{{ loan.id }}</td>
+        <td>{{ loan.borrower.full_name }}</td>
+        <td>{{ loan.holder_display }}</td>
+        <td>{{ loan.checkout_date.strftime('%Y-%m-%d') }}</td>
+        <td class="{% if loan.is_overdue %}overdue{% endif %}">{{ loan.due_date or '—' }}</td>
+        <td>{{ loan.returned_date.strftime('%Y-%m-%d') if loan.returned_date else '—' }}</td>
+        <td>
+          {% if loan.status.value == 'active' %}<span class="badge warn">Actif</span>
+          {% elif loan.status.value == 'partially_returned' %}<span class="badge warn">Partiel</span>
+          {% elif loan.status.value == 'returned' %}<span class="badge ok">Retourné</span>
+          {% else %}<span class="badge muted">Annulé</span>{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted">Aucun prêt.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
