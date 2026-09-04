@@ -7,6 +7,7 @@ from alembic.config import Config
 
 from app.database import SessionLocal
 from app.models import Category
+from scripts.backup_db import backup_db
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,6 +25,8 @@ DEFAULT_CATEGORIES = [
 
 
 def init_db() -> None:
+    backup_db()
+
     alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(BASE_DIR / "migrations"))
     command.upgrade(alembic_cfg, "head")

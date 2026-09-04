@@ -4,6 +4,7 @@ __pycache__/
 venv/
 data/*.db
 data/*.db-journal
+data/backups/
 .DS_Store
 *.egg-info/
 .pytest_cache/
