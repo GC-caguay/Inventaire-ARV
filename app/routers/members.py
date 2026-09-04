@@ -20,19 +20,8 @@ def list_members(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/new")
-def create_member(
-    full_name: str = Form(...),
-    email: str = Form(""),
-    phone: str = Form(""),
-    db: Session = Depends(get_db),
-):
-    db.add(
-        TeamMember(
-            full_name=full_name.strip(),
-            email=email.strip() or None,
-            phone=phone.strip() or None,
-        )
-    )
+def create_member(full_name: str = Form(...), db: Session = Depends(get_db)):
+    db.add(TeamMember(full_name=full_name.strip()))
     db.commit()
     return RedirectResponse("/members?msg=Membre+ajout%C3%A9", status_code=303)
 
