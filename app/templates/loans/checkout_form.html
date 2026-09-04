@@ -82,6 +82,6 @@
 <script>
   window.ARV_ITEM_TYPES = JSON.parse(document.getElementById('item-types-data').textContent);
   window.ARV_CONTACTS = JSON.parse(document.getElementById('contacts-data').textContent);
-  document.addEventListener('DOMContentLoaded', arvInitCheckoutForm);
+  document.addEventListener('DOMContentLoaded', function () { arvInitCheckoutForm(); });
 </script>
 {% endblock %}
