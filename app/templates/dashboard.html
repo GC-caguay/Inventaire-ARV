@@ -23,18 +23,23 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0">Prêts en retard</h2>
-  {% if stats.overdue_loans %}
+  <h2 style="margin-top:0">Prêts actifs</h2>
+  {% if active_loans %}
   <div class="table-wrap">
     <table>
-      <thead><tr><th>#</th><th>Emprunteur</th><th>Détenteur</th><th>Échéance</th><th></th></tr></thead>
+      <thead><tr><th>#</th><th>Emprunteur</th><th>Détenteur</th><th>Matériel</th><th>Échéance</th><th></th></tr></thead>
       <tbody>
-      {% for loan in stats.overdue_loans %}
+      {% for loan in active_loans %}
         <tr>
           <td>{{ loan.id }}</td>
           <td>{{ loan.borrower.full_name }}</td>
           <td>{{ loan.holder_display }}</td>
-          <td class="overdue">{{ loan.due_date }}</td>
+          <td>
+            {% for line in loan.lines %}
+              {{ line.item_type.name }}{% if not line.item_unit %} (x{{ line.quantity_outstanding }}){% endif %}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+          <td class="{% if loan.is_overdue %}overdue{% endif %}">{{ loan.due_date or '—' }}{% if loan.is_overdue %} <span class="badge danger">En retard</span>{% endif %}</td>
           <td><a class="btn small" href="/loans/{{ loan.id }}/return">Retour</a></td>
         </tr>
       {% endfor %}
@@ -42,12 +47,11 @@
     </table>
   </div>
   {% else %}
-  <p class="muted">Aucun prêt en retard.</p>
+  <p class="muted">Rien n'est sorti en ce moment.</p>
   {% endif %}
 </div>
 
 <div class="toolbar">
   <a class="btn" href="/loans/new">+ Sortir du matériel</a>
-  <a class="btn secondary" href="/inventory/new">+ Ajouter un item</a>
 </div>
 {% endblock %}
