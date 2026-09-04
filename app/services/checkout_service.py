@@ -59,22 +59,17 @@ def create_loan(
     *,
     borrower_member_id: int,
     is_for_self: bool,
-    holder_member_id: int | None,
-    holder_party_id: int | None,
+    holder_contact_id: int | None,
     due_date: date | None,
     notes: str | None,
     lines: list[LineRequest],
 ) -> Loan:
     if is_for_self:
-        holder_member_id = None
-        holder_party_id = None
-    else:
-        if not holder_member_id and not holder_party_id:
-            raise CheckoutError(
-                "Préciser un détenteur (membre ou partie) quand ce n'est pas pour soi-même."
-            )
-        if holder_member_id and holder_party_id:
-            raise CheckoutError("Le détenteur doit être un membre OU une partie, pas les deux.")
+        holder_contact_id = None
+    elif not holder_contact_id:
+        raise CheckoutError(
+            "Préciser qui sera en possession (comité + membre du comité) quand ce n'est pas pour soi-même."
+        )
 
     if not lines:
         raise CheckoutError("Ajouter au moins un item à sortir.")
@@ -82,8 +77,7 @@ def create_loan(
     loan = Loan(
         borrower_member_id=borrower_member_id,
         is_for_self=is_for_self,
-        holder_member_id=holder_member_id,
-        holder_party_id=holder_party_id,
+        holder_contact_id=holder_contact_id,
         due_date=due_date,
         notes=notes,
         status=LoanStatus.ACTIVE,

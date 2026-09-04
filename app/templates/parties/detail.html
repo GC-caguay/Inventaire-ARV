@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ party.name }} — Inventaire ARV{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">{{ party.name }}</h1>
+  <form method="post" action="/parties/{{ party.id }}/toggle">
+    <button class="btn secondary" type="submit">{% if party.active %}Désactiver ce comité{% else %}Réactiver ce comité{% endif %}</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Membres</h2>
+  <p class="muted">Ces personnes peuvent être sélectionnées comme détenteur lors d'une sortie "pour un comité".</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nom</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for c in party.contacts %}
+        <tr>
+          <td>{{ c.full_name }}</td>
+          <td>{% if c.active %}<span class="badge ok">Actif</span>{% else %}<span class="badge muted">Inactif</span>{% endif %}</td>
+          <td>
+            <form method="post" action="/parties/{{ party.id }}/contacts/{{ c.id }}/toggle">
+              <button class="btn small secondary" type="submit">{% if c.active %}Désactiver{% else %}Réactiver{% endif %}</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="muted">Aucun membre pour l'instant.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="/parties/{{ party.id }}/contacts/add" class="field-row" style="margin-top:1rem;align-items:flex-end">
+    <div class="field" style="flex:1">
+      <label>Ajouter un membre</label>
+      <input type="text" name="full_name" required placeholder="Nom complet">
+    </div>
+    <button class="btn" type="submit">Ajouter</button>
+  </form>
+</div>
+{% endblock %}

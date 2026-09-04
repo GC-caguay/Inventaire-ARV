@@ -20,31 +20,26 @@
     <legend>Qui sera en possession</legend>
     <div class="toggle-row">
       <label><input type="radio" name="holder_mode" value="self" checked onchange="arvToggleHolderMode()"> Pour moi-même (l'emprunteur)</label>
-      <label><input type="radio" name="holder_mode" value="other" onchange="arvToggleHolderMode()"> Pour un tiers (client, comité, autre membre...)</label>
+      <label><input type="radio" name="holder_mode" value="other" onchange="arvToggleHolderMode()"> Pour un comité</label>
     </div>
     <div id="holder-fields" class="hidden">
       <div class="field-row">
         <div class="field">
-          <label>Membre de l'équipe</label>
-          <select name="holder_member_id" id="holder_member_select"
-                  onchange="document.getElementById('holder_party_select').value='';document.getElementById('new_party_name').value='';">
-            <option value="">—</option>
-            {% for m in members %}<option value="{{ m.id }}">{{ m.full_name }}</option>{% endfor %}
+          <label>Comité</label>
+          <select name="holder_party_id" id="holder_party_select" onchange="arvOnPartyChange()">
+            <option value="">— Choisir —</option>
+            {% for p in parties %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+            <option value="__new__">+ Nouveau comité...</option>
           </select>
+          <input type="text" name="new_party_name" id="new_party_name" class="hidden" placeholder="Nom du nouveau comité" style="margin-top:0.4rem">
         </div>
         <div class="field">
-          <label>ou Partie existante (comité, client...)</label>
-          <select name="holder_party_id" id="holder_party_select"
-                  onchange="document.getElementById('holder_member_select').value='';document.getElementById('new_party_name').value='';">
-            <option value="">—</option>
-            {% for p in parties %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+          <label>Membre de ce comité</label>
+          <select name="holder_contact_id" id="holder_contact_select" onchange="arvOnContactChange()">
+            <option value="">— Choisir un comité d'abord —</option>
           </select>
+          <input type="text" name="new_contact_name" id="new_contact_name" class="hidden" placeholder="Nom du nouveau membre" style="margin-top:0.4rem">
         </div>
-      </div>
-      <div class="field">
-        <label>ou Nouvelle partie (si elle n'existe pas encore dans la liste)</label>
-        <input type="text" name="new_party_name" id="new_party_name" placeholder="ex. Comité Promotion"
-               oninput="document.getElementById('holder_member_select').value='';document.getElementById('holder_party_select').value='';">
       </div>
     </div>
   </fieldset>
@@ -83,8 +78,10 @@
 </form>
 
 <script id="item-types-data" type="application/json">{{ item_types_json | safe }}</script>
+<script id="contacts-data" type="application/json">{{ contacts_json | safe }}</script>
 <script>
   window.ARV_ITEM_TYPES = JSON.parse(document.getElementById('item-types-data').textContent);
+  window.ARV_CONTACTS = JSON.parse(document.getElementById('contacts-data').textContent);
   document.addEventListener('DOMContentLoaded', arvInitCheckoutForm);
 </script>
 {% endblock %}

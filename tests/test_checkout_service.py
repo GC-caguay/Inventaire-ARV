@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.models import Category, ItemType, ItemUnit, KitComponent, Party, TeamMember, UnitStatus
+from app.models import Category, ItemType, ItemUnit, KitComponent, Party, PartyContact, TeamMember, UnitStatus
 from app.services.checkout_service import (
     CheckoutError,
     LineRequest,
@@ -58,20 +58,18 @@ def test_checkout_for_self_defaults_holder_to_borrower(db):
         db,
         borrower_member_id=member.id,
         is_for_self=True,
-        holder_member_id=None,
-        holder_party_id=None,
+        holder_contact_id=None,
         due_date=None,
         notes=None,
         lines=[LineRequest(item_type_id=camera_type.id, item_unit_id=unit.id)],
     )
 
-    assert loan.holder_member_id is None
-    assert loan.holder_party_id is None
+    assert loan.holder_contact_id is None
     assert loan.holder_display == "Charles-Antoine (lui-même)"
     assert unit.status == UnitStatus.OUT
 
 
-def test_checkout_for_third_party_requires_holder(db):
+def test_checkout_for_committee_requires_holder(db):
     camera_type, unit = _make_camera(db)
     member = TeamMember(full_name="Charles-Antoine")
     db.add(member)
@@ -82,35 +80,36 @@ def test_checkout_for_third_party_requires_holder(db):
             db,
             borrower_member_id=member.id,
             is_for_self=False,
-            holder_member_id=None,
-            holder_party_id=None,
+            holder_contact_id=None,
             due_date=None,
             notes=None,
             lines=[LineRequest(item_type_id=camera_type.id, item_unit_id=unit.id)],
         )
 
 
-def test_checkout_for_third_party_sets_distinct_holder(db):
+def test_checkout_for_committee_sets_distinct_holder(db):
     camera_type, unit = _make_camera(db)
     member = TeamMember(full_name="Charles-Antoine")
     party = Party(name="Comité Promotion")
     db.add_all([member, party])
+    db.flush()
+    contact = PartyContact(party_id=party.id, full_name="Jean Dupont")
+    db.add(contact)
     db.commit()
 
     loan = create_loan(
         db,
         borrower_member_id=member.id,
         is_for_self=False,
-        holder_member_id=None,
-        holder_party_id=party.id,
+        holder_contact_id=contact.id,
         due_date=None,
         notes=None,
         lines=[LineRequest(item_type_id=camera_type.id, item_unit_id=unit.id)],
     )
 
     assert loan.borrower_member_id == member.id
-    assert loan.holder_party_id == party.id
-    assert loan.holder_display == "Comité Promotion"
+    assert loan.holder_contact_id == contact.id
+    assert loan.holder_display == "Jean Dupont (Comité Promotion)"
 
 
 def test_kit_line_qty_is_overridable_and_reduces_availability(db):
@@ -123,8 +122,7 @@ def test_kit_line_qty_is_overridable_and_reduces_availability(db):
         db,
         borrower_member_id=member.id,
         is_for_self=True,
-        holder_member_id=None,
-        holder_party_id=None,
+        holder_contact_id=None,
         due_date=None,
         notes=None,
         lines=[
@@ -155,8 +153,7 @@ def test_cannot_checkout_more_fungible_qty_than_available(db):
             db,
             borrower_member_id=member.id,
             is_for_self=True,
-            holder_member_id=None,
-            holder_party_id=None,
+            holder_contact_id=None,
             due_date=None,
             notes=None,
             lines=[LineRequest(item_type_id=battery_type.id, quantity=5)],
@@ -180,8 +177,7 @@ def test_cannot_checkout_unit_already_out(db):
             db,
             borrower_member_id=member.id,
             is_for_self=True,
-            holder_member_id=None,
-            holder_party_id=None,
+            holder_contact_id=None,
             due_date=None,
             notes=None,
             lines=[LineRequest(item_type_id=camera_type.id, item_unit_id=unit.id)],

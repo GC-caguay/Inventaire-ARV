@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import ItemType, Loan, LoanStatus
+from app.models import ItemType, Loan, LoanStatus, PartyContact
 from app.services.checkout_service import get_available_quantity
 
 
@@ -42,8 +42,7 @@ def get_active_loans(db: Session) -> list[Loan]:
         .filter(Loan.status.in_([LoanStatus.ACTIVE, LoanStatus.PARTIALLY_RETURNED]))
         .options(
             joinedload(Loan.borrower),
-            joinedload(Loan.holder_member),
-            joinedload(Loan.holder_party),
+            joinedload(Loan.holder_contact).joinedload(PartyContact.party),
         )
         .order_by(Loan.checkout_date.desc())
         .all()

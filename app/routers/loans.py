@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
 from app.database import get_db
-from app.models import ItemType, Loan, LoanStatus, Party, TeamMember, UnitStatus
+from app.models import ItemType, Loan, LoanStatus, Party, PartyContact, TeamMember, UnitStatus
 from app.services.checkout_service import (
     CheckoutError,
     LineRequest,
@@ -70,17 +70,58 @@ def _checkout_context(request: Request, db: Session, error: Optional[str] = None
         .all()
     )
     parties = (
-        db.query(Party).filter(Party.active == True).order_by(Party.name).all()  # noqa: E712
+        db.query(Party)
+        .filter(Party.active == True)  # noqa: E712
+        .options(joinedload(Party.contacts))
+        .order_by(Party.name)
+        .all()
     )
+    contacts_data = {
+        str(p.id): [{"id": c.id, "full_name": c.full_name} for c in p.contacts if c.active]
+        for p in parties
+    }
     default_due = date.today() + timedelta(days=settings.default_loan_days)
     return {
         "request": request,
         "members": members,
         "parties": parties,
         "item_types_json": json.dumps(_build_item_types_data(db)),
+        "contacts_json": json.dumps(contacts_data),
         "default_due": default_due.isoformat(),
         "error": error,
     }
+
+
+def _resolve_holder_contact(db: Session, form) -> Optional[int]:
+    party_raw = form.get("holder_party_id") or None
+    new_party_name = (form.get("new_party_name") or "").strip()
+    contact_raw = form.get("holder_contact_id") or None
+    new_contact_name = (form.get("new_contact_name") or "").strip()
+
+    if party_raw == "__new__" or (not party_raw and new_party_name):
+        if not new_party_name:
+            raise CheckoutError("Préciser le nom du nouveau comité.")
+        party = Party(name=new_party_name)
+        db.add(party)
+        db.flush()
+        party_id = party.id
+    elif party_raw:
+        party_id = int(party_raw)
+    else:
+        party_id = None
+
+    if contact_raw == "__new__" or (not contact_raw and new_contact_name):
+        if not new_contact_name:
+            raise CheckoutError("Préciser le nom du membre du comité.")
+        if party_id is None:
+            raise CheckoutError("Choisir ou créer un comité avant d'ajouter un membre.")
+        contact = PartyContact(party_id=party_id, full_name=new_contact_name)
+        db.add(contact)
+        db.flush()
+        return contact.id
+    if contact_raw:
+        return int(contact_raw)
+    return None
 
 
 @router.get("/new")
@@ -92,20 +133,8 @@ def new_loan_form(request: Request, db: Session = Depends(get_db)):
 async def create_loan_route(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
 
-    holder_member_raw = form.get("holder_member_id") or None
-    holder_party_raw = form.get("holder_party_id") or None
-    new_party_name = (form.get("new_party_name") or "").strip()
+    is_for_self = form.get("holder_mode", "self") == "self"
     due_date_raw = form.get("due_date")
-
-    if new_party_name:
-        new_party = Party(name=new_party_name)
-        db.add(new_party)
-        db.flush()
-        holder_party_raw = str(new_party.id)
-        holder_member_raw = None
-    elif holder_member_raw and holder_party_raw:
-        # Le formulaire ne devrait permettre qu'un seul choix ; priorité au membre par sécurité.
-        holder_party_raw = None
 
     item_type_ids = form.getlist("line_item_type_id")
     item_unit_ids = form.getlist("line_item_unit_id")
@@ -127,12 +156,12 @@ async def create_loan_route(request: Request, db: Session = Depends(get_db)):
         )
 
     try:
+        holder_contact_id = None if is_for_self else _resolve_holder_contact(db, form)
         loan = create_loan(
             db,
             borrower_member_id=int(form["borrower_member_id"]),
-            is_for_self=form.get("holder_mode", "self") == "self",
-            holder_member_id=int(holder_member_raw) if holder_member_raw else None,
-            holder_party_id=int(holder_party_raw) if holder_party_raw else None,
+            is_for_self=is_for_self,
+            holder_contact_id=holder_contact_id,
             due_date=date.fromisoformat(due_date_raw) if due_date_raw else None,
             notes=form.get("notes") or None,
             lines=lines,
@@ -160,8 +189,7 @@ def loan_history(request: Request, status: Optional[str] = None, db: Session = D
         db.query(Loan)
         .options(
             joinedload(Loan.borrower),
-            joinedload(Loan.holder_member),
-            joinedload(Loan.holder_party),
+            joinedload(Loan.holder_contact).joinedload(PartyContact.party),
         )
         .order_by(Loan.checkout_date.desc())
     )

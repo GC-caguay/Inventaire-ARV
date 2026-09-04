@@ -1,20 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Parties — Inventaire ARV{% endblock %}
+{% block title %}Comités — Inventaire ARV{% endblock %}
 {% block content %}
-<h1>Parties externes</h1>
-<p class="muted">Comités, clients ou autres tiers qui peuvent être en possession de matériel sans être membres de l'équipe.</p>
+<h1>Comités</h1>
+<p class="muted">Comités (ou autres tiers) qui peuvent être en possession de matériel. Chaque comité a sa propre liste de membres.</p>
 
 <div class="card">
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Nom</th><th>Type</th><th>Contact</th><th>Statut</th><th></th></tr></thead>
+      <thead><tr><th>Nom</th><th>Membres</th><th>Statut</th><th></th></tr></thead>
       <tbody>
         {% for p in parties %}
         <tr>
-          <td>{{ p.name }}</td>
-          <td>{{ p.party_type or '' }}</td>
-          <td>{{ p.contact_info or '' }}</td>
-          <td>{% if p.active %}<span class="badge ok">Active</span>{% else %}<span class="badge muted">Inactive</span>{% endif %}</td>
+          <td><a href="/parties/{{ p.id }}">{{ p.name }}</a></td>
+          <td>{{ p.contacts | selectattr('active') | list | length }}</td>
+          <td>{% if p.active %}<span class="badge ok">Actif</span>{% else %}<span class="badge muted">Inactif</span>{% endif %}</td>
           <td>
             <form method="post" action="/parties/{{ p.id }}/toggle">
               <button class="btn small secondary" type="submit">{% if p.active %}Désactiver{% else %}Réactiver{% endif %}</button>
@@ -22,7 +21,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Aucune partie.</td></tr>
+        <tr><td colspan="4" class="muted">Aucun comité.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -30,19 +29,11 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0">Ajouter une partie</h2>
+  <h2 style="margin-top:0">Ajouter un comité</h2>
   <form method="post" action="/parties/new" class="field-row" style="align-items:flex-end">
     <div class="field" style="flex:2">
       <label>Nom (ex. "Comité Promotion")</label>
       <input type="text" name="name" required>
-    </div>
-    <div class="field" style="flex:1">
-      <label>Type</label>
-      <input type="text" name="party_type" placeholder="Comité, client...">
-    </div>
-    <div class="field" style="flex:2">
-      <label>Contact</label>
-      <input type="text" name="contact_info">
     </div>
     <button class="btn" type="submit">Ajouter</button>
   </form>

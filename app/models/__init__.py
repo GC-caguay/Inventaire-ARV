@@ -5,6 +5,7 @@ from app.models.kit_component import KitComponent
 from app.models.loan import Loan, LoanStatus
 from app.models.loan_line import LoanLine, LoanLineStatus
 from app.models.party import Party
+from app.models.party_contact import PartyContact
 from app.models.team_member import TeamMember
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "LoanLine",
     "LoanLineStatus",
     "Party",
+    "PartyContact",
     "TeamMember",
 ]

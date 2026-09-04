@@ -6,12 +6,84 @@ function arvToggleHolderMode() {
     fields.classList.remove('hidden');
   } else {
     fields.classList.add('hidden');
-    var memberSel = document.getElementById('holder_member_select');
     var partySel = document.getElementById('holder_party_select');
     var newParty = document.getElementById('new_party_name');
-    if (memberSel) memberSel.value = '';
+    var contactSel = document.getElementById('holder_contact_select');
+    var newContact = document.getElementById('new_contact_name');
     if (partySel) partySel.value = '';
-    if (newParty) newParty.value = '';
+    if (newParty) { newParty.value = ''; newParty.classList.add('hidden'); newParty.required = false; }
+    if (contactSel) contactSel.innerHTML = '<option value="">— Choisir un comité d\'abord —</option>';
+    if (newContact) { newContact.value = ''; newContact.classList.add('hidden'); newContact.required = false; }
+  }
+}
+
+function arvOnPartyChange() {
+  var partySelect = document.getElementById('holder_party_select');
+  var newPartyInput = document.getElementById('new_party_name');
+  var contactSelect = document.getElementById('holder_contact_select');
+  var newContactInput = document.getElementById('new_contact_name');
+  if (!partySelect) return;
+
+  if (partySelect.value === '__new__') {
+    newPartyInput.classList.remove('hidden');
+    newPartyInput.required = true;
+    contactSelect.innerHTML = '';
+    var newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = '+ Nouveau membre';
+    contactSelect.appendChild(newOpt);
+    contactSelect.value = '__new__';
+    contactSelect.disabled = true;
+    newContactInput.classList.remove('hidden');
+    newContactInput.required = true;
+  } else {
+    newPartyInput.classList.add('hidden');
+    newPartyInput.required = false;
+    newPartyInput.value = '';
+    contactSelect.disabled = false;
+    arvPopulateContacts(partySelect.value);
+  }
+}
+
+function arvPopulateContacts(partyId) {
+  var contactSelect = document.getElementById('holder_contact_select');
+  var newContactInput = document.getElementById('new_contact_name');
+  contactSelect.innerHTML = '';
+
+  var placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = partyId ? '— Choisir —' : '— Choisir un comité d\'abord —';
+  contactSelect.appendChild(placeholder);
+
+  var contacts = (window.ARV_CONTACTS && window.ARV_CONTACTS[partyId]) || [];
+  contacts.forEach(function (c) {
+    var opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.full_name;
+    contactSelect.appendChild(opt);
+  });
+
+  var newOpt = document.createElement('option');
+  newOpt.value = '__new__';
+  newOpt.textContent = '+ Nouveau membre...';
+  contactSelect.appendChild(newOpt);
+
+  newContactInput.classList.add('hidden');
+  newContactInput.required = false;
+  newContactInput.value = '';
+}
+
+function arvOnContactChange() {
+  var contactSelect = document.getElementById('holder_contact_select');
+  var newContactInput = document.getElementById('new_contact_name');
+  if (!contactSelect) return;
+  if (contactSelect.value === '__new__') {
+    newContactInput.classList.remove('hidden');
+    newContactInput.required = true;
+  } else {
+    newContactInput.classList.add('hidden');
+    newContactInput.required = false;
+    newContactInput.value = '';
   }
 }
 
