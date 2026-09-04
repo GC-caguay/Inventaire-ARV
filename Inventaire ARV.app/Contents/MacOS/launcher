@@ -1,0 +1,26 @@
+#!/bin/bash
+# Lanceur sans fenêtre de terminal : démarre le serveur en arrière-plan
+# (s'il ne tourne pas déjà) et ouvre directement l'app dans le navigateur.
+cd "/Users/CAGUAY/Documents/GIT/Inventaire ARV"
+
+mkdir -p logs data
+
+if [ ! -d ".venv" ]; then
+    osascript -e 'display notification "Première installation en cours, patience (30-60s)..." with title "Inventaire ARV"' >/dev/null 2>&1
+    python3 -m venv .venv >> logs/launcher.log 2>&1
+    ./.venv/bin/pip install --quiet --upgrade pip >> logs/launcher.log 2>&1
+    ./.venv/bin/pip install --quiet -r requirements.txt >> logs/launcher.log 2>&1
+fi
+
+./.venv/bin/python -m scripts.init_db >> logs/launcher.log 2>&1
+
+# Ne démarre un nouveau serveur que si aucun ne répond déjà sur le port 8000.
+if ! (exec 3<>/dev/tcp/127.0.0.1/8000) 2>/dev/null; then
+    nohup ./.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 >> logs/server.log 2>&1 &
+    disown
+    sleep 2
+else
+    exec 3<&- 3>&- 2>/dev/null
+fi
+
+open "http://127.0.0.1:8000"

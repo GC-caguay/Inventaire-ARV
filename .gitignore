@@ -5,6 +5,7 @@ venv/
 data/*.db
 data/*.db-journal
 data/backups/
+logs/
 .DS_Store
 *.egg-info/
 .pytest_cache/
