@@ -189,6 +189,31 @@ def delete_unit(item_type_id: int, unit_id: int, db: Session = Depends(get_db)):
     return RedirectResponse(f"/inventory/{item_type_id}?msg=Unit%C3%A9+retir%C3%A9e", status_code=303)
 
 
+@router.post("/{item_type_id}/units/{unit_id}/status")
+def set_unit_status(
+    item_type_id: int,
+    unit_id: int,
+    status: str = Form(...),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    unit = db.get(ItemUnit, unit_id)
+    if unit is None or unit.item_type_id != item_type_id:
+        raise HTTPException(404)
+    if unit.status == UnitStatus.OUT:
+        raise HTTPException(400, "Cette unité est sortie ; passe par le retour pour changer son état.")
+    try:
+        new_status = UnitStatus(status)
+    except ValueError:
+        raise HTTPException(400, "Statut invalide.")
+    unit.status = new_status
+    if notes.strip():
+        unit.notes = notes.strip()
+    db.add(unit)
+    db.commit()
+    return RedirectResponse(f"/inventory/{item_type_id}?msg=Statut+mis+%C3%A0+jour", status_code=303)
+
+
 @router.post("/{item_type_id}/kit/add")
 def add_kit_component(
     item_type_id: int,

@@ -33,7 +33,19 @@
           <td>{{ u.notes or '' }}</td>
           <td>
             {% if u.status.value == 'in_stock' %}
-            <form method="post" action="/inventory/{{ item_type.id }}/units/{{ u.id }}/delete" onsubmit="return confirm('Retirer cette unité de l\'inventaire ?');">
+            <form method="post" action="/inventory/{{ item_type.id }}/units/{{ u.id }}/status" style="display:inline-flex;gap:0.3rem;align-items:center;margin-right:0.4rem">
+              <input type="hidden" name="status" value="maintenance">
+              <input type="text" name="notes" placeholder="Raison (optionnel)" style="width:130px">
+              <button class="btn small secondary" type="submit">Défectueuse</button>
+            </form>
+            {% elif u.status.value == 'maintenance' %}
+            <form method="post" action="/inventory/{{ item_type.id }}/units/{{ u.id }}/status" style="display:inline;margin-right:0.4rem">
+              <input type="hidden" name="status" value="in_stock">
+              <button class="btn small secondary" type="submit">Remettre en stock</button>
+            </form>
+            {% endif %}
+            {% if u.status.value in ('in_stock', 'maintenance') %}
+            <form method="post" action="/inventory/{{ item_type.id }}/units/{{ u.id }}/delete" style="display:inline" onsubmit="return confirm('Retirer cette unité de l\'inventaire ?');">
               <button class="btn small secondary" type="submit">Retirer</button>
             </form>
             {% endif %}
