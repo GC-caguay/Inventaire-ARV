@@ -20,6 +20,19 @@ complètement : `pkill -f "uvicorn app.main:app"` dans un terminal, ou redémarr
 `run.command` existe toujours en secours (utile pour voir les logs en direct dans un terminal si
 quelque chose ne fonctionne pas comme prévu).
 
+### Linux (Kubuntu/KDE)
+
+1. Adapter le chemin `Exec=` dans `Inventaire-ARV.desktop` si le dépôt n'est pas dans
+   `~/Documents/Inventaire-ARV`.
+2. Copier le raccourci sur le Bureau et le rendre exécutable/fiable :
+   ```bash
+   cp Inventaire-ARV.desktop ~/Desktop/
+   chmod +x ~/Desktop/Inventaire-ARV.desktop linux-start.sh
+   gio set ~/Desktop/Inventaire-ARV.desktop metadata::trusted true   # évite l'avertissement KDE au premier clic
+   ```
+3. Double-clic sur l'icône "Inventaire ARV" sur le Bureau : ça démarre le serveur en arrière-plan
+   (si pas déjà lancé) et ouvre directement le navigateur, sans fenêtre de terminal.
+
 ## Démarrage manuel (développement)
 
 ```bash

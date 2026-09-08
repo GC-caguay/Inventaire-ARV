@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Inventaire ARV
+Comment=Démarrer l'app de gestion d'inventaire ARV
+Exec=/home/arv/Documents/Inventaire-ARV/linux-start.sh
+Icon=applications-office
+Terminal=false
+Categories=Utility;
