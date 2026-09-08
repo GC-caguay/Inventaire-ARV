@@ -20,7 +20,7 @@ from app.services.checkout_service import (
 )
 from app.services.dashboard_service import get_active_loans
 from app.services.return_service import ReturnError, return_line
-from app.templates_env import templates
+from app.templates_env import render
 
 router = APIRouter(prefix="/loans")
 
@@ -62,7 +62,7 @@ def _build_item_types_data(db: Session) -> dict:
     return data
 
 
-def _checkout_context(request: Request, db: Session, error: Optional[str] = None) -> dict:
+def _checkout_context(db: Session, error: Optional[str] = None) -> dict:
     members = (
         db.query(TeamMember)
         .filter(TeamMember.active == True)  # noqa: E712
@@ -82,7 +82,6 @@ def _checkout_context(request: Request, db: Session, error: Optional[str] = None
     }
     default_due = date.today() + timedelta(days=settings.default_loan_days)
     return {
-        "request": request,
         "members": members,
         "parties": parties,
         "item_types_json": json.dumps(_build_item_types_data(db)),
@@ -126,7 +125,7 @@ def _resolve_holder_contact(db: Session, form) -> Optional[int]:
 
 @router.get("/new")
 def new_loan_form(request: Request, db: Session = Depends(get_db)):
-    return templates.TemplateResponse("loans/checkout_form.html", _checkout_context(request, db))
+    return render(request, "loans/checkout_form.html", **_checkout_context(db))
 
 
 @router.post("/new")
@@ -168,10 +167,11 @@ async def create_loan_route(request: Request, db: Session = Depends(get_db)):
         )
     except CheckoutError as exc:
         db.rollback()
-        return templates.TemplateResponse(
+        return render(
+            request,
             "loans/checkout_form.html",
-            _checkout_context(request, db, error=str(exc)),
             status_code=400,
+            **_checkout_context(db, error=str(exc)),
         )
 
     return RedirectResponse(f"/loans/active?msg=Sortie+enregistr%C3%A9e+%23{loan.id}", status_code=303)
@@ -180,7 +180,7 @@ async def create_loan_route(request: Request, db: Session = Depends(get_db)):
 @router.get("/active")
 def active_loans_view(request: Request, db: Session = Depends(get_db)):
     loans = get_active_loans(db)
-    return templates.TemplateResponse("loans/who_has_what.html", {"request": request, "loans": loans})
+    return render(request, "loans/who_has_what.html", loans=loans)
 
 
 @router.get("")
@@ -199,9 +199,7 @@ def loan_history(request: Request, status: Optional[str] = None, db: Session = D
         except ValueError:
             pass
     loans = query.all()
-    return templates.TemplateResponse(
-        "loans/history.html", {"request": request, "loans": loans, "status": status or ""}
-    )
+    return render(request, "loans/history.html", loans=loans, status=status or "")
 
 
 @router.get("/{loan_id}/return")
@@ -209,7 +207,7 @@ def return_form(loan_id: int, request: Request, db: Session = Depends(get_db)):
     loan = db.get(Loan, loan_id)
     if loan is None:
         raise HTTPException(404)
-    return templates.TemplateResponse("loans/checkin_form.html", {"request": request, "loan": loan})
+    return render(request, "loans/checkin_form.html", loan=loan)
 
 
 @router.post("/{loan_id}/return")
@@ -237,10 +235,8 @@ async def process_return(loan_id: int, request: Request, db: Session = Depends(g
 
     if errors:
         db.refresh(loan)
-        return templates.TemplateResponse(
-            "loans/checkin_form.html",
-            {"request": request, "loan": loan, "error": " ".join(errors)},
-            status_code=400,
+        return render(
+            request, "loans/checkin_form.html", status_code=400, loan=loan, error=" ".join(errors)
         )
 
     return RedirectResponse("/loans/active?msg=Retour+enregistr%C3%A9", status_code=303)

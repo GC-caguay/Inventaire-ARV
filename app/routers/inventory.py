@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models import Category, ItemType, ItemUnit, KitComponent, UnitStatus
 from app.services.checkout_service import get_available_quantity
-from app.templates_env import templates
+from app.templates_env import render
 
 router = APIRouter(prefix="/inventory")
 
@@ -37,26 +37,21 @@ def list_inventory(
         it.id: get_available_quantity(db, it) for it in item_types if not it.is_serialized
     }
 
-    return templates.TemplateResponse(
+    return render(
+        request,
         "inventory/list.html",
-        {
-            "request": request,
-            "item_types": item_types,
-            "categories": categories,
-            "availability": availability,
-            "q": q or "",
-            "category_id": category_id,
-        },
+        item_types=item_types,
+        categories=categories,
+        availability=availability,
+        q=q or "",
+        category_id=category_id,
     )
 
 
 @router.get("/new")
 def new_item_form(request: Request, db: Session = Depends(get_db)):
     categories = db.query(Category).order_by(Category.name).all()
-    return templates.TemplateResponse(
-        "inventory/item_form.html",
-        {"request": request, "categories": categories, "item_type": None},
-    )
+    return render(request, "inventory/item_form.html", categories=categories, item_type=None)
 
 
 @router.post("/new")
@@ -111,15 +106,13 @@ def item_detail(item_type_id: int, request: Request, db: Session = Depends(get_d
     if not item_type.is_serialized:
         available_qty = get_available_quantity(db, item_type)
 
-    return templates.TemplateResponse(
+    return render(
+        request,
         "inventory/item_detail.html",
-        {
-            "request": request,
-            "item_type": item_type,
-            "kit_components": kit_components,
-            "other_item_types": other_item_types,
-            "available_qty": available_qty,
-        },
+        item_type=item_type,
+        kit_components=kit_components,
+        other_item_types=other_item_types,
+        available_qty=available_qty,
     )
 
 
@@ -129,10 +122,7 @@ def edit_item_form(item_type_id: int, request: Request, db: Session = Depends(ge
     if item_type is None:
         raise HTTPException(404)
     categories = db.query(Category).order_by(Category.name).all()
-    return templates.TemplateResponse(
-        "inventory/item_form.html",
-        {"request": request, "categories": categories, "item_type": item_type},
-    )
+    return render(request, "inventory/item_form.html", categories=categories, item_type=item_type)
 
 
 @router.post("/{item_type_id}/edit")

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import Party, PartyContact
-from app.templates_env import templates
+from app.templates_env import render
 
 router = APIRouter(prefix="/parties")
 
@@ -19,7 +19,7 @@ def list_parties(request: Request, db: Session = Depends(get_db)):
         .order_by(Party.active.desc(), Party.name)
         .all()
     )
-    return templates.TemplateResponse("parties/list.html", {"request": request, "parties": parties})
+    return render(request, "parties/list.html", parties=parties)
 
 
 @router.post("/new")
@@ -56,7 +56,7 @@ def party_detail(party_id: int, request: Request, db: Session = Depends(get_db))
     party = db.get(Party, party_id)
     if party is None:
         raise HTTPException(404)
-    return templates.TemplateResponse("parties/detail.html", {"request": request, "party": party})
+    return render(request, "parties/detail.html", party=party)
 
 
 @router.post("/{party_id}/contacts/add")

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import TeamMember
-from app.templates_env import templates
+from app.templates_env import render
 
 router = APIRouter(prefix="/members")
 
@@ -16,7 +16,7 @@ def list_members(request: Request, db: Session = Depends(get_db)):
     members = (
         db.query(TeamMember).order_by(TeamMember.active.desc(), TeamMember.full_name).all()
     )
-    return templates.TemplateResponse("members/list.html", {"request": request, "members": members})
+    return render(request, "members/list.html", members=members)
 
 
 @router.post("/new")
