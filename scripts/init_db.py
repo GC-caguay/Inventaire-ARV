@@ -18,6 +18,7 @@ DEFAULT_CATEGORIES = [
     "Trépieds",
     "Éclairage",
     "Speaker",
+    "Subwoofer",
     "Câbles",
     "Cartes mémoire",
     "Autre",
