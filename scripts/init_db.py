@@ -17,7 +17,7 @@ DEFAULT_CATEGORIES = [
     "Piles",
     "Trépieds",
     "Éclairage",
-    "Audio",
+    "Speaker",
     "Câbles",
     "Cartes mémoire",
     "Autre",
@@ -33,6 +33,13 @@ def init_db() -> None:
 
     db = SessionLocal()
     try:
+        # Renommage ponctuel : "Audio" -> "Speaker" (préserve les items déjà liés à cette catégorie).
+        audio = db.query(Category).filter(Category.name == "Audio").first()
+        if audio and not db.query(Category).filter(Category.name == "Speaker").first():
+            audio.name = "Speaker"
+            db.add(audio)
+            db.commit()
+
         existing = {c.name for c in db.query(Category).all()}
         for name in DEFAULT_CATEGORIES:
             if name not in existing:
